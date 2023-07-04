@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Catalog.API.Controllers
 {
-    public class HomeController : Controller
+    public class CatalogController : Controller
     {
         // GET: HomeController
         public ActionResult Index()
