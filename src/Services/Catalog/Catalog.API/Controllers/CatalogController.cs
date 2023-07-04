@@ -1,83 +1,76 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Catalog.API.Entities;
+using Catalog.API.Repositories;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace Catalog.API.Controllers
 {
-    public class CatalogController : Controller
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    public class CatalogController : ControllerBase
     {
-        // GET: HomeController
-        public ActionResult Index()
+        private readonly IProductRepository _repository;
+        private readonly ILogger<CatalogController> _logger;
+
+        public CatalogController(IProductRepository repository, ILogger<CatalogController> logger)
         {
-            return View();
+            _repository = repository ?? throw new ArgumentException(nameof(repository));
+            _logger = logger ?? throw new ArgumentException(nameof(logger));
         }
 
-        // GET: HomeController/Details/5
-        public ActionResult Details(int id)
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
+        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
-            return View();
+            var products = await _repository.GetProducts();
+            return Ok(products);
         }
 
-        // GET: HomeController/Create
-        public ActionResult Create()
+        [HttpGet("{id:length(24)}", Name = "GetProduct")]
+        [ProducesResponseType((int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(Product), (int)HttpStatusCode.OK)]
+        public async Task<ActionResult<Product>> GetProductById(string id)
         {
-            return View();
+            var product = await _repository.GetProduct(id);
+            if (product == null)
+            {
+                _logger.LogError($"Product with id: {id}, not found.");
+                return NotFound();
+            }
+            return Ok(product);
         }
 
-        // POST: HomeController/Create
+        [Route("[action]/{category}", Name = "GetProductByCategory")]
+        [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<Product>), (int)HttpStatusCode.OK)]
+        public async Task<ActionResult<IEnumerable<Product>>> GetProductByCategory(string category)
+        {
+            var products = await _repository.GetProductByCategory(category);
+            return Ok(products);
+        }
+
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        [ProducesResponseType(typeof(Product), (int)HttpStatusCode.OK)]
+        public async Task<ActionResult<Product>> CreateProduct([FromBody] Product product)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            await _repository.CreateProduct(product);
+
+            return CreatedAtRoute("GetProduct", new { id = product.Id }, product);
         }
 
-        // GET: HomeController/Edit/5
-        public ActionResult Edit(int id)
+        [HttpPut]
+        [ProducesResponseType(typeof(Product), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> UpdateProduct([FromBody] Product product)
         {
-            return View();
+            return Ok(await _repository.UpdateProduct(product));
         }
 
-        // POST: HomeController/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        [HttpDelete("{id:length(24)}", Name = "DeleteProduct")]
+        [ProducesResponseType(typeof(Product), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> DeleteProductById(string id)
         {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        // GET: HomeController/Delete/5
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        // POST: HomeController/Delete/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
-        {
-            try
-            {
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+            return Ok(await _repository.DeleteProduct(id));
         }
     }
 }
