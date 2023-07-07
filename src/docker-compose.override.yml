@@ -62,9 +62,19 @@ services:
     container_name: basket.api
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - "CacheSettings:ConnectionString:basketdb:6379"
+      - "CacheSettings:ConnectionString=basketdb:6379"
     depends_on:
       - basketdb
     ports:
       - "8001:80"
+
+  discount.api:
+    container_name: discount.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "DatabaseSettings:ConnectionString=Server=discountdb;Port=5432;Database=DiscountDb;User Id=admin;Password=admin12345678;"
+    depends_on:
+      - discountdb
+    ports:
+      - "8002:80"
 
